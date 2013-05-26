@@ -16,9 +16,11 @@ import (
 type Invoker func(c *Context) View
 
 type Context struct {
-	Request *http.Request
-	params  map[string]string
-	vars    map[string]string
+	Request     *http.Request
+	params      map[string]string
+	vars        map[string]string
+	data        map[string]interface{}
+	application *Girl
 	http.ResponseWriter
 }
 
@@ -72,7 +74,7 @@ func (t TextView) Apply(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func (c *Context) Render(s string, data interface{}) View {
-	tmpl := girl.templateSet.Lookup(s)
+	tmpl := c.application.templateSet.Lookup(s)
 	return TemplateView{tmpl, data}
 }
 
@@ -130,26 +132,26 @@ func (c *Context) invoke(routeHander Invoker) (err error) {
 	return
 }
 
-func Get(pattern string, invoker Invoker) {
-	addRoute(pattern, "GET", invoker)
-	addRoute(pattern, "HEAD", invoker)
+func (g *Girl) Get(pattern string, invoker Invoker) {
+	g.addRoute(pattern, "GET", invoker)
+	g.addRoute(pattern, "HEAD", invoker)
 }
 
-func Post(pattern string, invoker Invoker) {
-	addRoute(pattern, "POST", invoker)
+func (g *Girl) Post(pattern string, invoker Invoker) {
+	g.addRoute(pattern, "POST", invoker)
 }
 
-func Put(pattern string, invoker Invoker) {
-	addRoute(pattern, "PUT", invoker)
+func (g *Girl) Put(pattern string, invoker Invoker) {
+	g.addRoute(pattern, "PUT", invoker)
 }
 
-func Delete(pattern string, invoker Invoker) {
-	addRoute(pattern, "DELETE", invoker)
+func (g *Girl) Delete(pattern string, invoker Invoker) {
+	g.addRoute(pattern, "DELETE", invoker)
 }
 
-func addRoute(pattern, method string, invoker Invoker) {
-	signature := girl.routes[method]
-	girl.routes[method] = append(signature, Route{pattern, invoker})
+func (g *Girl) addRoute(pattern, method string, invoker Invoker) {
+	signature := g.routes[method]
+	g.routes[method] = append(signature, Route{pattern, invoker})
 }
 
 func matchUrl(scheme, path string) (bool, map[string]string) {
@@ -193,8 +195,15 @@ func (g *Girl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(rPath)
-	context := Context{r, nil, nil, w}
-	for _, router := range girl.routes[r.Method] {
+	context := Context{
+		Request:        r,
+		params:         nil,
+		vars:           nil,
+		data:           nil,
+		application:    g,
+		ResponseWriter: w,
+	}
+	for _, router := range g.routes[r.Method] {
 		scheme := router.pattern
 
 		isMatch, vars := matchUrl(scheme, rPath)
@@ -212,6 +221,11 @@ func (g *Girl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	context.Abort(http.StatusNotFound, "not found")
+}
+
+func (g *Girl) Run(addr string) {
+	log.Println("=> Girl server start at port: 9999")
+	http.ListenAndServe(addr, g)
 }
 
 func (g *Girl) initTemplate() error {
@@ -283,24 +297,18 @@ func dirExists(dir string) bool {
 	return fi.IsDir()
 }
 
-func Run(addr string) {
-	log.Println("=> Girl server start at port: 9999")
-	http.ListenAndServe(addr, &girl)
-}
-
-var girl Girl
-
-func init() {
+func New() *Girl {
 	root, _ := rootDir()
 	log.Println("set project root dir:", root)
 
 	routes := make(map[string][]Route)
 
-	girl = Girl{routes, nil, root}
+	girl := Girl{routes, nil, root}
 	err := girl.initTemplate()
 
 	if err != nil {
 		panic(err)
 	}
 
+	return &girl
 }

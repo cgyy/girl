@@ -1,6 +1,6 @@
 # girl
 
-girl is a sinatra style web framework 
+girl is a [sinatra](http://www.sinatrarb.com/) style web framework 
 
 ## Overview
 
@@ -24,12 +24,14 @@ import (
 )
 
 func Index(c *girl.Context) girl.View {
-    return c.RenderText("hello world")
+	return c.RenderText("hello world")
 }
 
 func main() {
-    girl.Get("/", Index)
-    girl.Run(":9999")
+    app := girl.New()
+
+    app.Get("/", Index)
+    app.Run(":9999")
 }
 
 

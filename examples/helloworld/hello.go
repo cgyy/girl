@@ -9,6 +9,8 @@ func Index(c *girl.Context) girl.View {
 }
 
 func main() {
-    girl.Get("/", Index)
-    girl.Run(":9999")
+    app := girl.New()
+
+    app.Get("/", Index)
+    app.Run(":9999")
 }
