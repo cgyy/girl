@@ -1,0 +1,17 @@
+
+.user {
+	float:right;
+	width : 20%;
+}
+
+
+
+.side {
+	float:left;
+	width: 30%;
+}
+
+.content {
+	float:right;
+	width : 60%;
+}
