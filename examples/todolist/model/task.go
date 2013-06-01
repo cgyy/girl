@@ -50,16 +50,14 @@ func (r *Task) Save() *Task {
 	r.UpdatedAt = now
 	if r.Id > 0 {
 		_, err = db.Exec("UPDATE tasks SET user_id=?, title=?, content=?, updated_at=?  WHERE id=?",
-			r.UserId, r.Title, r.Content, now, r.Id,
-		)
+			r.UserId, r.Title, r.Content, now, r.Id)
 
 	} else {
 		var insertId int64
 		var result sql.Result
 		r.CreatedAt = now
 		result, err = db.Exec("INSERT INTO tasks(user_id, title, content, created_at, updated_at) values (?,?,?,?,?)",
-			r.UserId, r.Title, r.Content, now, now,
-		)
+			r.UserId, r.Title, r.Content, now, now)
 
 		insertId, err = result.LastInsertId()
 		r.Id = int(insertId)
