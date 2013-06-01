@@ -1,6 +1,5 @@
 package model
 
-
 type User struct {
 	Id        int
 	Name      string
@@ -10,4 +9,5 @@ type User struct {
 	CreatedAt string
 	UpdatedAt string
 }
-//TODO 
+
+//TODO
